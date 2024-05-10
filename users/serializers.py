@@ -66,5 +66,17 @@ class SignUpSerializer(serializers.ModelSerializer):
         return data
 
 
+class VerifyOtpSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=True, read_only=False)
+    code = serializers.CharField(required=True, read_only=False)
 
+    def validate(self, data):
+        code = data.get('code', None)
+        if not (len(code) == 4 and str(code).isdigit()):
+            just = {
+                'status':False,
+                'message':'code 4 xonali va raqamlardan iborat bo\'lishi kerak'
+            }
+            raise ValidationError(just)
 
+        return data

@@ -33,7 +33,7 @@ class UserAdmin(UserAdmin):
 
 
 class CodeverifyAdmin(admin.ModelAdmin):
-    list_display = ('user', 'verify_type', 'is_confirmed')
+    list_display = ('user', 'verify_type', 'code', 'is_confirmed')
     list_filter = ('verify_type', 'is_confirmed')
     search_fields = ('user__username', )
 
