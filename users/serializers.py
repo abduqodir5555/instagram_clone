@@ -66,6 +66,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         return data
 
 
+
 class VerifyOtpSerializer(serializers.Serializer):
     id = serializers.UUIDField(required=True, read_only=False)
     code = serializers.CharField(required=True, read_only=False)
@@ -80,3 +81,15 @@ class VerifyOtpSerializer(serializers.Serializer):
             raise ValidationError(just)
 
         return data
+
+
+regestir, forgot_password = "regestir", "forgot_password"
+
+class SendAgainCodeSerializer(serializers.Serializer):
+    CODE_TYPE = (
+        ("regestir", "regestir"),
+        ("forgot_password", "forgot_password")
+    )
+
+    code_type = serializers.ChoiceField(choices=CODE_TYPE, required=True, read_only=False)
+    user_id = serializers.UUIDField(required=True, read_only=False)
