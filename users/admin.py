@@ -10,10 +10,10 @@ admin.site.unregister(Group)
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
-    list_display = ("username", "email", "phone_number", "first_name", "last_name", "is_staff")
+    list_display = ("username", "email", "phone_number", "first_name", "last_name", "is_active", "is_staff")
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone_number", "photo")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone_number", "photo", "bio")}),
         (
             _("Permissions"),
             {

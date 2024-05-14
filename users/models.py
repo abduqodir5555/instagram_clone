@@ -43,6 +43,7 @@ class User(BaseModel, AbstractUser):
         ),
     )
 
+    bio = models.TextField(blank=True)
     email = models.EmailField(max_length=100, unique=True, blank=True)
     phone_number = models.CharField(max_length=100, validators=[check_phone_validator],
                                     unique=True, blank=True)
@@ -54,7 +55,7 @@ class User(BaseModel, AbstractUser):
 
     def check_email(self):
         if self.email:
-            self.email = self.email.lower()
+            self.email = str(self.email).lower()
 
     def check_username(self):
         if not self.username:

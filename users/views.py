@@ -1,12 +1,13 @@
 from datetime import datetime
 
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
-from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password
+from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password, \
+    UserInformationSerializer
 from users.utils import create_otp_code, send_code_email
 
 
@@ -145,3 +146,64 @@ class SendAgainCodeView(APIView):
                 'message': 'Sizning OTP codingiz muvaffaqiyatli yuborildi!!!'
             }
             return Response(data, status=status.HTTP_200_OK)
+
+
+class UserInformationView(APIView):
+    http_method_names = ['post', ]
+
+    def post(self, request):
+        try:
+            user = User.objects.get(id=request.data.get('user_id', None))
+        except:
+            just = {
+                'status': False,
+                'message': 'User topilmadi!!!'
+            }
+            return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserInformationSerializer(instance=user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        print(data)
+        
+
+        serializer.save()
+
+        just = {
+            'status': True,
+            'message': 'User has been updated successfully'
+        }
+        return Response(just, status=status.HTTP_200_OK)
+
+
+class UserInformationView(generics.UpdateAPIView):
+    http_method_names = ['post', 'put', 'patch']
+
+    def get_object(self, request):
+        user_id = request.data.get('user_id', None)
+        try:
+            user = User.objects.get(id=user_id)
+            return user
+        except:
+            data = {
+                'status': False,
+                'message': 'User not found'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, *args, **kwargs):
+        user = self.get_object(request=request)
+        serializer = UserInformationSerializer(instance=user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        data = {
+            'status': True,
+            'message': 'User information has been updated successfully',
+            'user_id': user.id,
+            'auth_status': user.auth_status,
+            'is_active': user.is_active
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+

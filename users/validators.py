@@ -1,6 +1,5 @@
 from django.core.exceptions import ValidationError
 
-
 def check_phone_validator(obj):
     if obj[0] == '+':
         if str(obj)[1:].isdigit:
@@ -19,3 +18,16 @@ def check_code_validator(obj):
         return True
     else:
         raise ValidationError(message="code qiymatini xato kiritdiz")
+
+
+def check_phone_validator_serializer(obj):
+    if obj[0] == '+':
+        if str(obj)[1:].isdigit:
+            if obj.startswith('+998') and len(str(obj))==13:
+                return True
+            elif obj.startswith('+') and len(str(obj))==10:
+                return True
+        else:
+            return False
+    else:
+        return False
