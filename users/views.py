@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
 from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password, \
-    UserInformationSerializer
+    UserInformationSerializer, PhotoStepSerializer
 from users.utils import create_otp_code, send_code_email
 
 
@@ -205,5 +205,39 @@ class UserInformationView(generics.UpdateAPIView):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+
+class PhotoStepView(APIView):
+    http_method_names = ['post', ]
+    def post(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id', None)
+        user = User.objects.filter(id=user_id)
+        if not user:
+            data = {
+                'status': False,
+                'message': 'User not found'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        serializer = PhotoStepSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        image = data.get('photo', None)
+        user = user[0]
+        if user.auth_status != CODE_VERIFIED:
+            data = {
+                'status': False,
+                'message': 'Siz ro\'yxatdan o\'tib bo\'lgansiz!!!'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        if image:
+            user.photo = image
+            user.auth_status = DONE
+            user.save()
+
+        data = {
+            'status': True,
+            'message': 'Siz muvaffaqiyatli ro\'yxatdan o\'tdingiz',
+            'auth_status': user.auth_status
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 

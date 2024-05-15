@@ -237,3 +237,10 @@ class UserInformationSerializer(serializers.Serializer):
         return instance
 
 
+class PhotoStepSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField(required=True, read_only=False)
+    photo = serializers.ImageField(required=False)
+
+
+
+
