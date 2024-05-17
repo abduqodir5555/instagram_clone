@@ -242,5 +242,16 @@ class PhotoStepSerializer(serializers.Serializer):
     photo = serializers.ImageField(required=False)
 
 
+class LoginSerializer(serializers.Serializer):
+    user_input = serializers.CharField(required=True, read_only=False)
+    password = serializers.CharField(required=True, read_only=False)
+
+    def validate(self, data):
+
+        return data
+
+
+
+
 
 

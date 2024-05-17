@@ -1,13 +1,17 @@
 from datetime import datetime
 
+from django.contrib.auth import authenticate
+from django.db.models import Q
 from rest_framework import status, generics
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
 from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password, \
-    UserInformationSerializer, PhotoStepSerializer
+    UserInformationSerializer, PhotoStepSerializer, LoginSerializer
 from users.utils import create_otp_code, send_code_email
 
 
@@ -237,6 +241,43 @@ class PhotoStepView(APIView):
             'status': True,
             'message': 'Siz muvaffaqiyatli ro\'yxatdan o\'tdingiz',
             'auth_status': user.auth_status
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class LoginView(APIView):
+    http_method_names = ['post', ]
+    def post(self, request, *args, **kwargs):
+        serializer = LoginSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user_input = data.get('user_input', None)
+        password = data.get('password', None)
+        users = User.objects.filter(Q(username=user_input) | Q(email=user_input) | Q(phone_number=user_input))
+        if not users:
+            just = {
+                'status': False,
+                'message': 'User not found'
+            }
+            return Response(just, status=status.HTTP_400_BAD_REQUEST)
+        user = users[0]
+        username = user.username
+
+        user = authenticate(username = username, password = password)
+
+        if user is None:
+            just = {
+                'status': False,
+                'message': 'Parol xato!!!'
+            }
+            return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh = RefreshToken.for_user(user)
+        data =  {
+            "status": True,
+            "username": user.username,
+            "access": str(refresh.access_token),
+            "refresh_token": str(refresh)
         }
         return Response(data, status=status.HTTP_200_OK)
 
