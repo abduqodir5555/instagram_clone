@@ -4,9 +4,10 @@ from django.contrib.auth import authenticate
 from django.db.models import Q
 from rest_framework import status, generics
 from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
@@ -280,5 +281,30 @@ class LoginView(APIView):
             "refresh_token": str(refresh)
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+class AccountView(APIView):
+    http_method_names = ['get', ]
+    permission_classes = [IsAuthenticated, ]
+    def get(self, request):
+        user = request.user
+        data = {
+            'status': True,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'phone_number': user.phone_number,
+            'bio': user.bio,
+            'auth_status': user.auth_status,
+            'auth_role': user.auth_role,
+            'auth_type': user.auth_type,
+        }
+        return Response(data=data, status=status.HTTP_200_OK)
+
+
+
+
+
 
 
