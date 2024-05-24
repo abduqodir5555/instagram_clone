@@ -251,10 +251,31 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True, read_only=False)
+    new_password = serializers.CharField(required=True, read_only=False)
+    confirm_password = serializers.CharField(required=True, read_only=False)
 
+    def validate(self, data):
+        password = data.get('password', None)
+        new_password = data.get('new_password', None)
+        confirm_password = data.get('confirm_password', None)
 
+        if new_password != confirm_password:
+            just = {
+                'status': False,
+                'message': 'Parollar bir biriga teng emas!!!'
+            }
+            raise ValidationError(just)
 
+        if password == new_password:
+            just = {
+                'status': False,
+                'message': 'Kiritgan paroliz eski paroliz bilan bir xil!!!'
+            }
+            raise ValidationError(just)
 
+        validate_password(new_password)
 
-
+        return data
 

@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, hashers
+from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from rest_framework import status, generics
 from rest_framework.generics import CreateAPIView
@@ -12,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
 from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password, \
-    UserInformationSerializer, PhotoStepSerializer, LoginSerializer
+    UserInformationSerializer, PhotoStepSerializer, LoginSerializer, PasswordChangeSerializer
 from users.utils import create_otp_code, send_code_email
 
 
@@ -303,6 +304,32 @@ class AccountView(APIView):
         return Response(data=data, status=status.HTTP_200_OK)
 
 
+class PasswordChangeView(APIView):
+    http_method_names = ['post', ]
+    permission_classes = [IsAuthenticated, ]
+    def post(self, request):
+        user = request.user
+        serializer = PasswordChangeSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        password = data.get('password')
+        new_password = data.get('new_password')
+
+        if not user.check_password(password):
+            just = {
+                'status': False,
+                'message': 'Password is incorrect!!!'
+            }
+            return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        just = {
+            'status': True,
+            'message': 'Password has been changed successfully!!!'
+        }
+        return Response(just, status=status.HTTP_200_OK)
 
 
 
