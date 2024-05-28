@@ -279,3 +279,45 @@ class PasswordChangeSerializer(serializers.Serializer):
 
         return data
 
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email_or_phone = serializers.CharField(required=True, read_only=False)
+    input_type = serializers.CharField(required=False, read_only=True, write_only=False)
+
+    def validate(self, data):
+        email_or_phone = data.get('email_or_phone')
+        input_type = check_email_or_phone(email_or_phone)
+        if input_type == 'email':
+            data = {
+                'email': email_or_phone,
+                'input_type': input_type
+            }
+        else:
+            data = {
+                'phone': email_or_phone,
+                'input_type': input_type
+            }
+
+        return data
+
+
+class ForgotPasswordChangeSerializer(serializers.Serializer):
+    user_id = serializers.CharField(required=True, read_only=False)
+    new_password = serializers.CharField(required=True, read_only=False)
+    confirm_password = serializers.CharField(required=True, read_only=False)
+
+    def validate(self, data):
+        new_password = data.get('new_password', None)
+        confirm_password = data.get('confirm_password', None)
+
+        if new_password != confirm_password:
+            just = {
+                'status': False,
+                'message': 'Parollar bir biriga teng emas'
+            }
+            raise ValidationError(just)
+
+        validate_password(new_password)
+
+        return data
+

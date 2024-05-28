@@ -1,19 +1,19 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from django.contrib.auth import authenticate, hashers
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate
 from django.db.models import Q
+from django.conf import settings
 from rest_framework import status, generics
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.models import User, CodeVerify, REGESTIR, CODE_VERIFIED, NEW, PHOTO_STEP, DONE, RESET_PASSWORD
 from users.serializers import SignUpSerializer, VerifyOtpSerializer, SendAgainCodeSerializer, regestir, forgot_password, \
-    UserInformationSerializer, PhotoStepSerializer, LoginSerializer, PasswordChangeSerializer
+    UserInformationSerializer, PhotoStepSerializer, LoginSerializer, PasswordChangeSerializer, ForgotPasswordSerializer, \
+    ForgotPasswordChangeSerializer
 from users.utils import create_otp_code, send_code_email
 
 
@@ -332,6 +332,137 @@ class PasswordChangeView(APIView):
         return Response(just, status=status.HTTP_200_OK)
 
 
+class ForgotPasswordView(APIView):
+    http_method_names = ['post', ]
 
+    @staticmethod
+    def get_expire_time(input_type):
+        if input_type == 'email':
+            return datetime.now() + timedelta(minutes=settings.EMAIL_EXPIRE_TIME)
+        else:
+            return datetime.now() + timedelta(minutes=settings.PHONE_EXPIRE_TIME)
+
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        input_type = data.get('input_type', None)
+
+        if input_type == 'email':
+            email = data.get('email', None)
+            user = User.objects.filter(email = email)
+            if user is None:
+                just = {
+                    'status': False,
+                    'message': 'User not found!!!'
+                }
+                return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+
+        elif input_type == 'phone':
+            phone = data.get('phone', None)
+            users = User.objects.filter(phone=phone)
+            if users is None:
+                just = {
+                    'status': False,
+                    'message': 'User not found'
+                }
+                return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            just = {
+                'status': False,
+                'message': 'nothing found'
+            }
+            return Response(just, status=status.HTTP_400_BAD_REQUEST)
+
+        user = user[0]
+        code = create_otp_code()
+        send_code_email(code, email)
+        expire_time = self.get_expire_time(input_type)
+        CodeVerify.objects.create(
+            user=user,
+            code=code,
+            verify_type=RESET_PASSWORD,
+            expire_time=expire_time
+        )
+        just = {
+            'status': True,
+            'message': 'otp code sended successfully',
+            'user_id': user.id
+        }
+        return Response(just, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordVerifyView(APIView):
+    http_method_names = ['post', ]
+
+    def post(self, request):
+        serializer = VerifyOtpSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user_id = data.get('id', None)
+        code = data.get('code', None)
+
+        try:
+            user = User.objects.get(id=user_id)
+
+        except:
+            data = {
+                'status': False,
+                'message': 'User not found!!!'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verify = CodeVerify.objects.get(user=user,
+                                            code=code,
+                                            verify_type=RESET_PASSWORD,
+                                            expire_time__gte=datetime.now(),
+                                            is_confirmed=False
+                                            )
+
+        except:
+            data = {
+                'status': False,
+                'message': 'code xato!!!'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        verify.is_confirmed = True
+        verify.save()
+        data = {
+            'status': True,
+            'message': 'Code has been successfully!!!',
+            'user_id': user.id
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordChangeView(APIView):
+    http_method_names = ['post', ]
+
+    def post(self, request):
+        serializer = ForgotPasswordChangeSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user_id = data.get('user_id', None)
+        new_password = data.get('new_password', None)
+        users = User.objects.filter(id = user_id)
+        if users is None:
+            data = {
+                'status': False,
+                'message': 'User not found!!!'
+            }
+            return Response(data, status=status.HTTP_200_OK)
+
+        user = users[0]
+        user.set_password(new_password)
+        user.save()
+        data = {
+            'status': True,
+            'message': 'password has been changed successfully!!!'
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
