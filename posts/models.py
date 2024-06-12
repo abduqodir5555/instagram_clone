@@ -12,6 +12,9 @@ class Post(BaseModel):
         allowed_extensions=['jpg', 'jpeg', 'png']), ])
     caption = models.TextField(validators=[MaxLengthValidator(2000)])
 
+    def __str__(self):
+        return f"{self.author} | post about > {self.caption[:80]}"
+
     class Meta:
         db_table = 'posts'
         verbose_name = 'post'
@@ -23,6 +26,9 @@ class Comment(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='related_comment_posts')
     comment = models.TextField(validators=[MaxLengthValidator(2000)])
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='child', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.author} | comment about > {self.comment[:80]}"
 
     class Meta:
         db_table = 'comments'
