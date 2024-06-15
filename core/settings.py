@@ -23,6 +23,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 
 LOCAL_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,9 +36,10 @@ LOCAL_APPS = [
 
 THIRD_PARTY_APPS = [
     'rest_framework',
-    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_yasg',
+
 ]
 
 INSTALLED_APPS = LOCAL_APPS + THIRD_PARTY_APPS
@@ -92,6 +94,50 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+JAZZMIN_SETTINGS = {
+    "site_title": "My Admin",
+    "site_header": "My Administration",
+    "welcome_sign": "Welcome to My Admin",
+    "topmenu_links": [
+        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+        {"model": "auth.User"},
+        {"app": "books"},
+    ],
+    "usermenu_links": [
+        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+        {"model": "auth.user"}
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["auth", "books", "books.author", "books.book"],
+    "custom_links": {
+        "books": [{
+            "name": "Make Messages",
+            "url": "make_messages",
+            "icon": "fas fa-comments",
+            "permissions": ["books.view_book"]
+        }]
+    },
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
+    "language_chooser": False,
 }
 
 

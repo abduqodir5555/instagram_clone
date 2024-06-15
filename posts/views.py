@@ -65,7 +65,7 @@ class PostCommentListView(generics.ListAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs['pk']
-        return Comment.objects.filter(post__id=post_id)
+        return Comment.objects.filter(post_id=post_id)
 
 
 class PostCommentCreateView(generics.CreateAPIView):
