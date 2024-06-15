@@ -2,9 +2,12 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from django.contrib.auth.mixins import UserPassesTestMixin
+from rest_framework.views import APIView
 
 from .models import Post, PostLike, Comment, CommentLike
 from .paginations import CustomPagination
+from .permissions import IsAuthorOfComment
 from .serializers import PostSerializer, PostLikeSerializer, CommentSerializer, CommentLikeSerializer
 
 
@@ -74,4 +77,87 @@ class PostCommentCreateView(generics.CreateAPIView):
         serializer.save(author=self.request.user, post_id=post_id)
 
 
+class PostLikeListView(generics.ListAPIView):
+    serializer_class = PostLikeSerializer
+    permission_classes = [AllowAny, ]
+
+    def get_queryset(self):
+        post_id = self.kwargs.get('pk')
+        query = PostLike.objects.filter(post_id=post_id)
+        return query
+
+
+class CommentRetrieveApiView(generics.RetrieveAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [AllowAny, ]
+    queryset = Comment.objects.all()
+
+
+class CommentLikeListView(generics.ListAPIView):
+    serializer_class = CommentLikeSerializer
+    permission_classes = [AllowAny, ]
+
+    def get_queryset(self):
+        comment_id = self.kwargs.get('pk')
+        query = CommentLike.objects.filter(comment_id=comment_id)
+        return query
+
+
+class CommentLikeView(generics.ListCreateAPIView):
+    serializer_class = CommentLikeSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_queryset(self):
+        user = self.request.user
+        query = CommentLike.objects.filter(author = user)
+        return query
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentLikeSerializer
+    permission_classes = [IsAuthenticated, IsAuthorOfComment]
+    queryset = CommentLike.objects.all()
+
+
+class PostLikingView(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+            obj = PostLike.objects.create(author=request.user, post_id=kwargs['pk'])
+            serializer = PostLikeSerializer(obj)
+            data = {
+                'status': True,
+                'message': 'Postga muvaffaqiyatli like bosildi!!!',
+                'data': serializer.data
+            }
+            return Response(data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            data = {
+                'status': False,
+                'message': f"{str(e)}",
+                'data': None
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            obj = PostLike.objects.get(author=request.user, post_id=pk)
+            obj.delete()
+            data = {
+                'status': True,
+                'message': 'LIKE o\'chirildi',
+                'data': None
+            }
+            return Response(data, status=status.HTTP_204_NO_CONTENT)
+
+        except Exception as e:
+            data = {
+                'status': False,
+                'message': f"{str(e)}",
+                'data': None
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
